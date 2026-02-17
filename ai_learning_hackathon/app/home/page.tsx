@@ -69,7 +69,12 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 p-8 font-sans">
-      <header className="mb-8 text-center">
+      <header className="mb-8 flex flex-col items-center relative">
+        <div className="absolute right-0 top-0">
+             <a href="/profile" className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors inline-flex items-center justify-center text-gray-700" title="Profile">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+             </a>
+        </div>
         <h1 className="text-4xl font-extrabold text-gray-900 mb-2 tracking-tight">
           AI Learning Hub
         </h1>
