@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Send, MessageSquare, ChevronLeft, ChevronRight, BookOpen, Loader2, MicOff, Volume2, Radio, User, Terminal, ArrowLeft } from 'lucide-react';
 import { SummaryResponse, summarizeText } from '@/services/lecture_api';
+import { Doubt_clear } from '@/services/lecture_doubt_api';
 import Link from 'next/link';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -144,16 +145,33 @@ const Lecture: React.FC = () => {
     : `Chunk ${chunkIndex + 1}`;
 
   // ── Chat ──────────────────────────────────────────────────────────────────
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!question.trim()) return;
-    setMessages(prev => [...prev, { role: 'user', text: question }]);
+
+    const currentQ = question;
+    setMessages(prev => [...prev, { role: 'user', text: currentQ }]);
     setQuestion("");
-    setTimeout(() => {
+
+    // Prepare context from current pages
+    const slice = allPages.slice(
+      chunkIndex * PAGES_PER_CHUNK,
+      chunkIndex * PAGES_PER_CHUNK + PAGES_PER_CHUNK
+    );
+    const contextText = slice.map(p => `[Page ${p.page}]\n${p.text}`).join("\n\n");
+
+    try {
+      const result = await Doubt_clear(currentQ, contextText);
       setMessages(prev => [...prev, {
         role: 'ai',
-        text: "PROCESSING INPUT... RELATING TO SECTION -> " + pageLabel + ". STANDBY."
+        text: result.resp
       }]);
-    }, 900);
+    } catch (err) {
+      console.error(err);
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        text: "SYSTEM ERROR: UNABLE TO PROCESS QUERY."
+      }]);
+    }
   };
 
   // ── TTS ────────────────────────────────────────────────────────────────
@@ -218,7 +236,7 @@ const Lecture: React.FC = () => {
           <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-center relative">
             <div className="w-full aspect-video border-4 border-black mb-4 bg-black overflow-hidden relative shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <video
-                src="/teacher_video.mp4"
+                src="/assets/teacher_video.mp4"
                 autoPlay
                 loop
                 muted
