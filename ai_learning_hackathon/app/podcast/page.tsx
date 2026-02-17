@@ -1,9 +1,16 @@
 'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
-import { ArrowLeft, Play, Pause, Download, Disc, Mic2, Sparkles, AlertCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, Play, Pause, Download, Disc, Mic2, Sparkles, AlertCircle, Loader2, FastForward, Rewind } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+
+const formatTime = (seconds: number) => {
+  if (!seconds) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
 
 export default function PodcastPage() {
   const [loading, setLoading] = useState(false)
@@ -11,6 +18,9 @@ export default function PodcastPage() {
   const [fileName, setFileName] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [playbackRate, setPlaybackRate] = useState(1.0)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
   const audioRef = useRef<HTMLAudioElement>(null)
   const router = useRouter()
 
@@ -80,6 +90,36 @@ export default function PodcastPage() {
     }
     setIsPlaying(!isPlaying)
   }
+
+  const handleSpeedChange = () => {
+    const speeds = [0.5, 1.0, 1.25, 1.5, 2.0];
+    const currentIndex = speeds.indexOf(playbackRate);
+    const nextSpeed = speeds[(currentIndex + 1) % speeds.length];
+    setPlaybackRate(nextSpeed);
+    if (audioRef.current) {
+      audioRef.current.playbackRate = nextSpeed;
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value);
+    setCurrentTime(time);
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans flex flex-col">
@@ -164,27 +204,53 @@ export default function PodcastPage() {
                         onEnded={() => setIsPlaying(false)}
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
+                        onTimeUpdate={handleTimeUpdate}
+                        onLoadedMetadata={handleLoadedMetadata}
                         className="hidden"
                     />
 
-                    {/* Custom Controls */}
-                    <div className="flex items-center justify-center gap-6">
+                    {/* Timeline */}
+                    <div className="w-full flex flex-col gap-2">
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max={duration || 100} 
+                        value={currentTime} 
+                        onChange={handleSeek}
+                        className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-rose-500 hover:accent-rose-400"
+                      />
+                      <div className="flex justify-between text-xs text-zinc-400 font-mono">
+                        <span>{formatTime(currentTime)}</span>
+                        <span>{formatTime(duration)}</span>
+                      </div>
+                    </div>
+
+                    {/* Controls Row */}
+                    <div className="flex items-center justify-between gap-4">
+                        {/* Speed Control */}
+                        <button 
+                          onClick={handleSpeedChange}
+                          className="w-12 text-sm font-bold text-zinc-400 hover:text-white transition-colors"
+                        >
+                          {playbackRate}x
+                        </button>
+
+                        {/* Main Play Button */}
                         <button 
                             onClick={togglePlay}
-                            className="h-16 w-16 flex items-center justify-center rounded-full bg-white text-black hover:scale-105 transition-transform"
+                            className="h-16 w-16 flex items-center justify-center rounded-full bg-white text-black hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                         >
                             {isPlaying ? <Pause className="h-6 w-6 fill-current" /> : <Play className="h-6 w-6 fill-current ml-1" />}
                         </button>
-                    </div>
 
-                    <div className="flex justify-center">
+                        {/* Download Button (Icon only) */}
                         <a 
                             href={audioUrl} 
                             download={`podcast-${fileName.replace(/\s+/g, '-').toLowerCase()}.mp3`}
-                            className="flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                            className="w-12 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                            title="Download"
                         >
-                            <Download className="h-4 w-4" />
-                            Download Episode
+                            <Download className="h-5 w-5" />
                         </a>
                     </div>
                 </div>
