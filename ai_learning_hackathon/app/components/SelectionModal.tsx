@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { PenTool, Mic2, BookOpenText } from 'lucide-react';
+import { PenTool, Mic2, BookOpenText, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
@@ -19,44 +19,44 @@ export default function SelectionModal({ isOpen, onClose, fileName }: SelectionM
   if (!isOpen) return null;
 
   const handleSelection = async (action: () => void, activityType: string) => {
-      try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-              await supabase.from('activity_logs').insert({
-                  user_id: user.id,
-                  activity_type: activityType,
-                  file_name: fileName || 'Unknown File'
-              });
-          }
-      } catch (err) {
-          console.error("Failed to log activity:", err);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('activity_logs').insert({
+          user_id: user.id,
+          activity_type: activityType,
+          file_name: fileName || 'Unknown File'
+        });
       }
-      action();
+    } catch (err) {
+      console.error("Failed to log activity:", err);
+    }
+    action();
   };
 
   const options = [
     {
       title: 'Annotate PDF',
-      description: 'Read, highlight, and draw on your document.',
+      description: 'Read, highlight, and draw.',
       icon: PenTool,
-      color: 'bg-blue-600',
-      action: () => router.push('/pdfviewer'), 
+      bgColor: 'bg-blue-400',
+      action: () => router.push('/pdfviewer'),
       tracking: 'annotation'
     },
     {
       title: 'AI Lecture',
-      description: 'Watch an AI-generated video lecture.',
+      description: 'Watch an AI video lecture.',
       icon: BookOpenText,
-      color: 'bg-indigo-600',
-      action: () => router.push('/lecture'), 
+      bgColor: 'bg-green-400',
+      action: () => router.push('/lecture'),
       tracking: 'lecture'
     },
     {
       title: 'Podcast',
-      description: 'Listen to an audio conversation about the topic.',
+      description: 'Listen to an audio convo.',
       icon: Mic2,
-      color: 'bg-rose-600',
-      action: () => router.push('/podcast'), 
+      bgColor: 'bg-pink-400',
+      action: () => router.push('/podcast'),
       tracking: 'podcast'
     }
   ];
@@ -70,48 +70,55 @@ export default function SelectionModal({ isOpen, onClose, fileName }: SelectionM
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           />
-          
+
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-4xl overflow-hidden rounded-3xl bg-zinc-900 border border-white/10 shadow-2xl"
+            initial={{ scale: 0.9, opacity: 0, rotate: -2 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            exit={{ scale: 0.9, opacity: 0, rotate: 2 }}
+            className="relative w-full max-w-4xl bg-[#fffdf5] border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-8 overflow-hidden font-mono"
           >
-            <div className="p-8 text-center bg-zinc-900/50">
-              <h2 className="text-3xl font-bold text-white mb-2">Choose Your Learning Mode</h2>
-              <p className="text-zinc-400">How would you like to engage with <span className="text-white font-medium">"{fileName}"</span>?</p>
+            {/* Decorative Corner */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-r-4 border-b-4 border-black bg-yellow-400 z-10"></div>
+
+            <div className="text-center mb-8 relative z-10">
+              <div className="inline-block bg-black text-white px-4 py-1 mb-2 transform -rotate-1">
+                <h2 className="text-3xl font-black uppercase tracking-tighter">Select Mode</h2>
+              </div>
+              <p className="font-bold text-black uppercase tracking-wide text-sm mt-2">
+                Target: <span className="bg-yellow-300 px-1 border-2 border-black border-dashed">{fileName}</span>
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8 bg-zinc-950/50">
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 bg-red-500 border-2 border-black text-white hover:translate-x-[2px] hover:translate-y-[2px] transition-transform shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] z-20"
+            >
+              <X size={20} strokeWidth={3} />
+            </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {options.map((option, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSelection(option.action, option.tracking)}
-                  className="group relative flex flex-col items-center p-6 rounded-2xl bg-zinc-900 border border-white/5 hover:border-white/20 transition-all hover:-translate-y-1 hover:shadow-xl"
+                  className="group relative flex flex-col items-center text-center p-6 border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none transition-all"
                 >
-                  <div className={`mb-6 h-20 w-20 rounded-full ${option.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
-                    <option.icon className="h-10 w-10 text-white" />
+                  <div className={`mb-4 h-16 w-16 border-2 border-black ${option.bgColor} flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:rotate-6 transition-transform`}>
+                    <option.icon className="h-8 w-8 text-black" strokeWidth={2.5} />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">{option.title}</h3>
-                  <p className="text-sm text-zinc-400 text-center leading-relaxed">
+                  <h3 className="text-xl font-black uppercase text-black mb-2">{option.title}</h3>
+                  <p className="text-xs font-bold text-gray-600 mb-6 uppercase tracking-tight">
                     {option.description}
                   </p>
-                  
-                  <div className="mt-6 px-4 py-2 rounded-full bg-white/5 text-xs font-bold text-white uppercase tracking-wider group-hover:bg-white group-hover:text-black transition-colors">
-                    Start
+
+                  <div className="mt-auto px-6 py-2 border-2 border-black bg-black text-white text-xs font-black uppercase tracking-widest group-hover:bg-white group-hover:text-black transition-colors">
+                    Initialize
                   </div>
                 </button>
               ))}
             </div>
-
-            <button 
-                onClick={onClose}
-                className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white transition-colors"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
           </motion.div>
         </div>
       )}

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
-import { ArrowLeft, Play, Pause, Download, Disc, Mic2, Sparkles, AlertCircle, Loader2, FastForward, Rewind } from 'lucide-react'
+import { ArrowLeft, Play, Pause, Download, Disc, Mic2, Sparkles, AlertCircle, Loader2, FastForward, Rewind, Volume2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -25,7 +25,6 @@ export default function PodcastPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Load content from localStorage
     const contentString = localStorage.getItem('uploadedContent')
     if (contentString) {
       const content = JSON.parse(contentString)
@@ -45,23 +44,16 @@ export default function PodcastPage() {
       }
 
       const content = JSON.parse(contentString)
-      // proper text extraction: concatenate all pages
       const fullText = content.pages.map((p: any) => p.text).join('\n\n')
 
       if (!fullText || fullText.length < 50) {
         throw new Error('Document content is too short to generate a podcast.')
       }
 
-      // Call the microservice
-      // Assuming it's running on localhost:8000
       const response = await fetch('https://dialogue-agent.onrender.com/generate-audio', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: fullText.slice(0, 100000) // Limit to 100k chars to be safe
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: fullText.slice(0, 100000) }),
       })
 
       if (!response.ok) {
@@ -72,7 +64,7 @@ export default function PodcastPage() {
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       setAudioUrl(url)
-      
+
     } catch (err: any) {
       console.error('Podcast generation failed:', err)
       setError(err.message || 'Something went wrong. Is the microservice running?')
@@ -122,137 +114,166 @@ export default function PodcastPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white font-sans flex flex-col">
+    <div className="min-h-screen bg-[#fffdf5] text-black font-mono p-4 sm:p-8 flex flex-col relative overflow-hidden">
+
+      {/* Background decoration */}
+      <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+      </div>
+
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/50 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/home" className="p-2 rounded-full hover:bg-white/10 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-zinc-400" />
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-pink-600 to-rose-600 shadow-lg shadow-rose-500/20">
-                <Mic2 className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-lg font-bold tracking-tight">Podcast Studio</span>
-            </div>
-          </div>
+      <div className="relative z-10 flex justify-between items-center bg-white border-4 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] mb-12">
+        <Link href="/home" className="flex items-center gap-2 font-bold hover:underline decoration-2">
+          <ArrowLeft className="w-5 h-5" />
+          RETURN
+        </Link>
+        <div className="flex items-center gap-3">
+          <div className="bg-red-500 w-4 h-4 rounded-full animate-pulse border-2 border-black"></div>
+          <span className="font-black uppercase text-xl tracking-tighter">Pirate Radio</span>
         </div>
-      </header>
+        <div className="w-24"></div>
+      </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 pt-32">
-        <div className="w-full max-w-2xl">
-          
-          {/* Card */}
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/50 p-8 shadow-2xl backdrop-blur-xl">
-            {/* Background Gradient */}
-            <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-rose-500/10 blur-3xl pointer-events-none"></div>
-            <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-pink-500/10 blur-3xl pointer-events-none"></div>
+      <main className="flex-1 flex flex-col items-center justify-center relative z-10">
 
-            <div className="relative z-10 flex flex-col items-center text-center">
-              
-              {/* Vinyl Animation */}
-              <div className={`relative mb-8 h-48 w-48 rounded-full border-4 border-zinc-800 bg-zinc-950 shadow-2xl flex items-center justify-center ${isPlaying ? 'animate-spin-slow' : ''}`}>
-                 <div className="absolute inset-0 rounded-full bg-[repeating-radial-gradient(#333,transparent_2px)] opacity-20"></div>
-                 <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-pink-500 to-rose-600 shadow-inner flex items-center justify-center">
-                    <div className="h-3 w-3 rounded-full bg-black/50 backdrop-blur"></div>
-                 </div>
-                 {/* Needle/arm simplified */}
-                 {isPlaying && (
-                     <div className="absolute -top-10 right-0 w-2 h-24 bg-zinc-400 origin-top rotate-[25deg] shadow-lg transition-transform duration-700"></div>
-                 )}
+        <div className="w-full max-w-3xl">
+
+          {/* Cassette Player Container */}
+          <div className="bg-[#2a2a2a] border-[6px] border-black p-8 rounded-[2rem] shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] relative">
+
+            {/* Screw heads */}
+            <div className="absolute top-4 left-4 w-4 h-4 bg-gray-400 rounded-full border-2 border-black flex items-center justify-center"><div className="w-2 h-0.5 bg-black rotate-45"></div></div>
+            <div className="absolute top-4 right-4 w-4 h-4 bg-gray-400 rounded-full border-2 border-black flex items-center justify-center"><div className="w-2 h-0.5 bg-black rotate-12"></div></div>
+            <div className="absolute bottom-4 left-4 w-4 h-4 bg-gray-400 rounded-full border-2 border-black flex items-center justify-center"><div className="w-2 h-0.5 bg-black -rotate-45"></div></div>
+            <div className="absolute bottom-4 right-4 w-4 h-4 bg-gray-400 rounded-full border-2 border-black flex items-center justify-center"><div className="w-2 h-0.5 bg-black rotate-90"></div></div>
+
+            {/* Cassette Window area */}
+            <div className="bg-[#e0e0e0] p-6 rounded-xl border-4 border-black shadow-inner mb-8 relative overflow-hidden">
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-xl"></div>
+
+              {/* Tape Label */}
+              <div className="bg-yellow-400 border-4 border-black p-2 mb-4 rotate-1 shadow-sm max-w-md mx-auto text-center">
+                <h2 className="font-black uppercase text-lg truncate">
+                  {fileName || 'NO TAPE INSERTED'}
+                </h2>
+                <p className="text-xs font-bold uppercase tracking-widest border-t-2 border-black mt-1 pt-1">
+                  Side A • {loading ? 'RECORDING...' : 'MASTER COPY'}
+                </p>
               </div>
 
-              <h2 className="text-2xl font-bold text-white mb-2 line-clamp-1 max-w-full">
-                {fileName || 'No Document Selected'}
-              </h2>
-              <p className="text-zinc-400 mb-8 max-w-md">
-                Convert your document into an engaging audio conversation between two experts.
-              </p>
+              {/* Reels */}
+              <div className="flex justify-center gap-12 items-center bg-[#333] p-4 rounded-lg border-4 border-black relative">
+                {/* Left Reel */}
+                <div className={`w-24 h-24 rounded-full border-[6px] border-white bg-black flex items-center justify-center relative ${isPlaying ? 'animate-[spin_4s_linear_infinite]' : ''}`}>
+                  <div className="w-20 h-20 rounded-full border-4 border-white/20 border-dashed"></div>
+                  <div className="absolute w-full h-2 bg-transparent border-l-4 border-r-4 border-white/50"></div>
+                  <div className="absolute w-2 h-full bg-transparent border-t-4 border-b-4 border-white/50"></div>
+                </div>
 
+                {/* Tape Window */}
+                <div className="h-16 flex-1 bg-black/80 border-2 border-zinc-700 relative overflow-hidden">
+                  <div className="absolute top-1/2 left-0 right-0 h-8 bg-[#5c3a2e] -translate-y-1/2 opacity-80"></div>
+                </div>
+
+                {/* Right Reel */}
+                <div className={`w-24 h-24 rounded-full border-[6px] border-white bg-black flex items-center justify-center relative ${isPlaying ? 'animate-[spin_4s_linear_infinite]' : ''}`}>
+                  <div className="w-20 h-20 rounded-full border-4 border-white/20 border-dashed"></div>
+                  <div className="absolute w-full h-2 bg-transparent border-l-4 border-r-4 border-white/50"></div>
+                  <div className="absolute w-2 h-full bg-transparent border-t-4 border-b-4 border-white/50"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Controls Area */}
+            <div className="flex flex-col gap-6">
+
+              {/* Generate / Error Msg */}
               {error && (
-                <div className="mb-6 flex items-center gap-2 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400 border border-red-500/20">
-                  <AlertCircle className="h-4 w-4" />
-                  {error}
+                <div className="bg-red-500 border-4 border-black p-2 text-center font-bold text-white uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  ERR: {error}
                 </div>
               )}
 
               {!audioUrl ? (
-                <button
-                  onClick={generatePodcast}
-                  disabled={loading || !fileName}
-                  className="group relative flex items-center justify-center gap-3 rounded-full bg-white px-8 py-4 text-base font-bold text-black transition-all hover:scale-105 hover:bg-zinc-200 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Creating Magic...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-5 w-5 text-rose-500" />
-                      Generate Podcast
-                    </>
-                  )}
-                </button>
+                <div className="text-center">
+                  <button
+                    onClick={generatePodcast}
+                    disabled={loading || !fileName}
+                    className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-red-500 border-4 border-black font-black text-white uppercase text-xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[8px] active:translate-y-[8px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="animate-spin" size={24} />
+                        <span>Synthesizing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mic2 className="animate-pulse" size={24} />
+                        <span>Start Session</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               ) : (
-                <div className="w-full space-y-6">
-                    <audio 
-                        ref={audioRef} 
-                        src={audioUrl} 
-                        onEnded={() => setIsPlaying(false)}
-                        onPlay={() => setIsPlaying(true)}
-                        onPause={() => setIsPlaying(false)}
-                        onTimeUpdate={handleTimeUpdate}
-                        onLoadedMetadata={handleLoadedMetadata}
-                        className="hidden"
+                <div className="flex flex-col gap-6">
+                  <audio
+                    ref={audioRef}
+                    src={audioUrl}
+                    onEnded={() => setIsPlaying(false)}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onTimeUpdate={handleTimeUpdate}
+                    onLoadedMetadata={handleLoadedMetadata}
+                    className="hidden"
+                  />
+
+                  {/* Progress Bar */}
+                  <div className="bg-[#111] p-1 border-4 border-black rounded-full relative h-8">
+                    <div
+                      className="h-full bg-green-500 rounded-l-full border-r-4 border-black"
+                      style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+                    ></div>
+                    <input
+                      type="range"
+                      min="0"
+                      max={duration || 100}
+                      value={currentTime}
+                      onChange={handleSeek}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     />
+                  </div>
+                  <div className="flex justify-between text-xs font-bold text-gray-400 uppercase font-mono px-2">
+                    <span>{formatTime(currentTime)}</span>
+                    <span>{formatTime(duration)}</span>
+                  </div>
 
-                    {/* Timeline */}
-                    <div className="w-full flex flex-col gap-2">
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max={duration || 100} 
-                        value={currentTime} 
-                        onChange={handleSeek}
-                        className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-rose-500 hover:accent-rose-400"
-                      />
-                      <div className="flex justify-between text-xs text-zinc-400 font-mono">
-                        <span>{formatTime(currentTime)}</span>
-                        <span>{formatTime(duration)}</span>
-                      </div>
-                    </div>
+                  {/* Buttons */}
+                  <div className="flex items-center justify-center gap-8">
 
-                    {/* Controls Row */}
-                    <div className="flex items-center justify-between gap-4">
-                        {/* Speed Control */}
-                        <button 
-                          onClick={handleSpeedChange}
-                          className="w-12 text-sm font-bold text-zinc-400 hover:text-white transition-colors"
-                        >
-                          {playbackRate}x
-                        </button>
+                    <button
+                      onClick={handleSpeedChange}
+                      className="w-16 h-12 bg-gray-200 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black text-sm hover:translate-y-1 active:shadow-none active:translate-y-[4px] transition-all flex items-center justify-center"
+                    >
+                      {playbackRate}x
+                    </button>
 
-                        {/* Main Play Button */}
-                        <button 
-                            onClick={togglePlay}
-                            className="h-16 w-16 flex items-center justify-center rounded-full bg-white text-black hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.3)]"
-                        >
-                            {isPlaying ? <Pause className="h-6 w-6 fill-current" /> : <Play className="h-6 w-6 fill-current ml-1" />}
-                        </button>
+                    <button
+                      onClick={togglePlay}
+                      className="w-24 h-24 bg-red-500 border-4 border-black rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center hover:translate-y-1 active:shadow-none active:translate-y-[6px] transition-all"
+                    >
+                      {isPlaying ? <Pause size={32} className="text-white fill-current" /> : <Play size={32} className="text-white fill-current ml-2" />}
+                    </button>
 
-                        {/* Download Button (Icon only) */}
-                        <a 
-                            href={audioUrl} 
-                            download={`podcast-${fileName.replace(/\s+/g, '-').toLowerCase()}.mp3`}
-                            className="w-12 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
-                            title="Download"
-                        >
-                            <Download className="h-5 w-5" />
-                        </a>
-                    </div>
+                    <a
+                      href={audioUrl}
+                      download={`podcast-${fileName.replace(/\s+/g, '-').toLowerCase()}.mp3`}
+                      className="w-16 h-12 bg-blue-400 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black flex items-center justify-center hover:translate-y-1 active:shadow-none active:translate-y-[4px] transition-all"
+                      title="Download"
+                    >
+                      <Download size={20} />
+                    </a>
+                  </div>
                 </div>
               )}
 
@@ -260,17 +281,6 @@ export default function PodcastPage() {
           </div>
         </div>
       </main>
-
-       {/* Custom CSS for spin */}
-       <style jsx global>{`
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-          animation: spin-slow 8s linear infinite;
-        }
-      `}</style>
     </div>
   )
 }

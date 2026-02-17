@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Send, MessageSquare, ChevronLeft, ChevronRight, BookOpen, Loader2, MicOff, Volume2, Radio, User, Terminal, ArrowLeft } from 'lucide-react';
 import { SummaryResponse, summarizeText } from '@/services/lecture_api';
-import { Doubt_clear } from '@/services/lecture_doubt_api';
 import Link from 'next/link';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -57,7 +56,7 @@ function saveCacheToStorage(cache: Record<number, CachedChunk>) {
 
 const Lecture: React.FC = () => {
   const [allPages, setAllPages] = useState<Page[]>([]);
-  
+
   useEffect(() => {
     setAllPages(getPagesFromStorage());
     setCache(getCacheFromStorage());
@@ -73,6 +72,7 @@ const Lecture: React.FC = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [wordIndex, setWordIndex] = useState<number>(-1);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([
@@ -89,6 +89,7 @@ const Lecture: React.FC = () => {
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
     setWordIndex(-1);
+    videoRef.current?.pause();
   }, [chunkIndex]);
 
   useEffect(() => {
@@ -145,33 +146,16 @@ const Lecture: React.FC = () => {
     : `Chunk ${chunkIndex + 1}`;
 
   // ── Chat ──────────────────────────────────────────────────────────────────
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!question.trim()) return;
-
-    const currentQ = question;
-    setMessages(prev => [...prev, { role: 'user', text: currentQ }]);
+    setMessages(prev => [...prev, { role: 'user', text: question }]);
     setQuestion("");
-
-    // Prepare context from current pages
-    const slice = allPages.slice(
-      chunkIndex * PAGES_PER_CHUNK,
-      chunkIndex * PAGES_PER_CHUNK + PAGES_PER_CHUNK
-    );
-    const contextText = slice.map(p => `[Page ${p.page}]\n${p.text}`).join("\n\n");
-
-    try {
-      const result = await Doubt_clear(currentQ, contextText);
+    setTimeout(() => {
       setMessages(prev => [...prev, {
         role: 'ai',
-        text: result.resp
+        text: "PROCESSING INPUT... RELATING TO SECTION -> " + pageLabel + ". STANDBY."
       }]);
-    } catch (err) {
-      console.error(err);
-      setMessages(prev => [...prev, {
-        role: 'ai',
-        text: "SYSTEM ERROR: UNABLE TO PROCESS QUERY."
-      }]);
-    }
+    }, 900);
   };
 
   // ── TTS ────────────────────────────────────────────────────────────────
@@ -186,17 +170,19 @@ const Lecture: React.FC = () => {
       const wordCount = spoken.trim().split(/\s+/).length - 1;
       setWordIndex(wordCount);
     };
-    utterance.onend = () => { setIsSpeaking(false); setWordIndex(-1); };
-    utterance.onerror = () => { setIsSpeaking(false); setWordIndex(-1); };
+    utterance.onend = () => { setIsSpeaking(false); setWordIndex(-1); videoRef.current?.pause(); };
+    utterance.onerror = () => { setIsSpeaking(false); setWordIndex(-1); videoRef.current?.pause(); };
 
     setIsSpeaking(true);
     window.speechSynthesis.speak(utterance);
+    videoRef.current?.play();
   };
 
   const handleStopSpeak = () => {
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
     setWordIndex(-1);
+    videoRef.current?.pause();
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -236,12 +222,12 @@ const Lecture: React.FC = () => {
           <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-center relative">
             <div className="w-full aspect-video border-4 border-black mb-4 bg-black overflow-hidden relative shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <video
+                ref={videoRef}
                 src="/assets/teacher_video.mp4"
-                autoPlay
                 loop
                 muted
                 playsInline
-                className="w-full h-full object-cover opacity-80"
+                className="w-96 h-full mt-2 opacity-80"
               />
               <div className="absolute inset-0 bg-green-500/10 pointer-events-none"></div>
               <div className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-black uppercase px-2 py-0.5 animate-pulse">LIVE</div>
@@ -425,8 +411,8 @@ const Lecture: React.FC = () => {
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[90%] p-3 border-2 border-black text-xs font-bold ${msg.role === 'user'
-                      ? 'bg-blue-300 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
-                      : 'bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                    ? 'bg-blue-300 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                    : 'bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
                     }`}>
                     {msg.text}
                   </div>
