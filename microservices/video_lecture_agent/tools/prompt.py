@@ -37,19 +37,18 @@ Your role:
 - Include examples where helpful.
 - Focus on understanding, not summarizing.
 
-Additionally:
-If an image would help understanding,
-set image_needed="yes" and describe useful images.
-Otherwise set image_needed="no" and keep image_of empty.
-
 STRICT JSON FORMAT ONLY:
 
-{
-  "doubt_clear": "clear teacher-style explanation resolving the doubt",
-}
+{{
+  "doubt_clear": "clear teacher-style explanation resolving the doubt"
+}}
 
-Student doubt text:
-{input_text}
+Student context text:
+{context}
+
+Student Query:
+{query}
 """
+
 
 

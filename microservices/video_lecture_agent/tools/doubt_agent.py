@@ -9,8 +9,8 @@ load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-async def solve_doubt(text: str) -> dict:
-    prompt = PROMPT_TEMPLATE_DOUBT_CLEAR.format(input_text=text)
+async def solve_doubt(query: str,context:str) -> dict:
+    prompt = PROMPT_TEMPLATE_DOUBT_CLEAR.format(context=context,query=query)
 
     try:
         response = client.models.generate_content(
