@@ -4,8 +4,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, PenTool, Eraser, ZoomIn, ZoomOut, MessageSquare, X, Send, Sparkles, ArrowLeft } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { createClient } from '@/utils/supabase/client';
 
 export default function PDFViewerPage() {
+  const supabase = createClient();
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
@@ -93,6 +95,39 @@ export default function PDFViewerPage() {
     };
     loadPdf();
   }, []);
+
+  // Track Progress
+  useEffect(() => {
+    const trackProgress = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const contentString = localStorage.getItem('uploadedContent');
+            if (!contentString) return;
+            
+            const content = JSON.parse(contentString);
+            const fileName = content.fileName || 'Untitled PDF';
+
+            // Upsert progress
+            await supabase.from('user_pdf_progress').upsert({
+                user_id: user.id,
+                pdf_name: fileName,
+                last_read_page: currentPage,
+                pages_read: currentPage, 
+                total_pages: numPages > 0 ? numPages : undefined,
+                last_read_at: new Date().toISOString()
+            }, { onConflict: 'user_id, pdf_name' });
+
+        } catch (err) {
+            console.error("Error tracking progress:", err);
+        }
+    };
+    
+    // Debounce tracking to avoid too many requests
+    const timeout = setTimeout(trackProgress, 2000);
+    return () => clearTimeout(timeout);
+  }, [currentPage, numPages]);
 
   // Render Page
   useEffect(() => {
