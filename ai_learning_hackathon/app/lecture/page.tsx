@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Send, MessageSquare, ChevronLeft, ChevronRight, BookOpen, Loader2, MicOff, Volume2 } from 'lucide-react';
-import { SummaryResponse,summarizeText } from '@/services/lecture_api';
+import { Mic, Send, MessageSquare, ChevronLeft, ChevronRight, BookOpen, Loader2, MicOff, Volume2, Radio, User, Terminal, ArrowLeft } from 'lucide-react';
+import { SummaryResponse, summarizeText } from '@/services/lecture_api';
+import Link from 'next/link';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Page {
@@ -30,9 +31,8 @@ function getPagesFromStorage(): Page[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    
+
     const parsed = JSON.parse(raw);
-    // Access the 'pages' array inside the object
     return Array.isArray(parsed.pages) ? parsed.pages : [];
   } catch {
     return [];
@@ -51,15 +51,14 @@ function getCacheFromStorage(): Record<number, CachedChunk> {
 function saveCacheToStorage(cache: Record<number, CachedChunk>) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-  } catch {}
+  } catch { }
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
 const Lecture: React.FC = () => {
   const allPages = getPagesFromStorage();
   const totalChunks = Math.max(1, Math.ceil(allPages.length / PAGES_PER_CHUNK));
 
-  const [chunkIndex, setChunkIndex] = useState(0);          // 0-based chunk index
+  const [chunkIndex, setChunkIndex] = useState(0);
   const [cache, setCache] = useState<Record<number, CachedChunk>>(getCacheFromStorage);
   const [content, setContent] = useState<CachedChunk>({ resp: "", images: [] });
   const [loading, setLoading] = useState(false);
@@ -70,40 +69,36 @@ const Lecture: React.FC = () => {
 
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'ai', text: "Hello! I'm your AI instructor. Ask me anything about the current lesson." }
+    { role: 'ai', text: "SYSTEM READY. AWAITING QUERY." }
   ]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // ── Fetch or serve from cache when chunk changes ──────────────────────────
+  // ── Fetch or serve from cache ──────────────────────────
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  //sppech stop when changing chunks
   useEffect(() => {
-  window.speechSynthesis.cancel();
-  setIsSpeaking(false);
-  setWordIndex(-1);
-}, [chunkIndex]);
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+    setWordIndex(-1);
+  }, [chunkIndex]);
 
   useEffect(() => {
     const loadChunk = async () => {
-      // If cached, use it immediately
       if (cache[chunkIndex]) {
         setContent(cache[chunkIndex]);
         return;
       }
 
-      // No pages stored → show placeholder
       if (allPages.length === 0) {
         setContent({
-          resp: "No pages found in local storage.\n\nStore your pages under the key \"lecture_pages\" as:\n[\n  { \"page\": 1, \"text\": \"...\" },\n  { \"page\": 2, \"text\": \"...\" }\n]",
+          resp: "NO DATA FOUND.\n\nUPLOAD PDF TO INITIALIZE LECTURE PROTOCOL.",
           images: []
         });
         return;
       }
 
-      // Slice 3 pages and call API
       const slice = allPages.slice(
         chunkIndex * PAGES_PER_CHUNK,
         chunkIndex * PAGES_PER_CHUNK + PAGES_PER_CHUNK
@@ -128,7 +123,6 @@ const Lecture: React.FC = () => {
     };
 
     loadChunk();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chunkIndex]);
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -151,261 +145,265 @@ const Lecture: React.FC = () => {
     setTimeout(() => {
       setMessages(prev => [...prev, {
         role: 'ai',
-        text: "Great question! This relates to the material in " + pageLabel + ". Let me think through that for you..."
+        text: "PROCESSING INPUT... RELATING TO SECTION -> " + pageLabel + ". STANDBY."
       }]);
     }, 900);
   };
 
-
-  // ── TTS────────────────────────────────────────────────────────────────
+  // ── TTS ────────────────────────────────────────────────────────────────
   const handleSpeak = () => {
-  if (!content.resp) return;
-  window.speechSynthesis.cancel();
-  const words = content.resp.split(/\s+/);
-  const utterance = new SpeechSynthesisUtterance(content.resp);
-  utteranceRef.current = utterance;
+    if (!content.resp) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(content.resp);
+    utteranceRef.current = utterance;
 
-  utterance.onboundary = (e) => {
-    // count words spoken so far by character index
-    const spoken = content.resp.slice(0, e.charIndex + e.charLength);
-    const wordCount = spoken.trim().split(/\s+/).length - 1;
-    setWordIndex(wordCount);
+    utterance.onboundary = (e) => {
+      const spoken = content.resp.slice(0, e.charIndex + e.charLength);
+      const wordCount = spoken.trim().split(/\s+/).length - 1;
+      setWordIndex(wordCount);
+    };
+    utterance.onend = () => { setIsSpeaking(false); setWordIndex(-1); };
+    utterance.onerror = () => { setIsSpeaking(false); setWordIndex(-1); };
+
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
   };
-  utterance.onend = () => { setIsSpeaking(false); setWordIndex(-1); };
-  utterance.onerror = () => { setIsSpeaking(false); setWordIndex(-1); };
 
-  setIsSpeaking(true);
-  window.speechSynthesis.speak(utterance);
-};
-
-const handleStopSpeak = () => {
-  window.speechSynthesis.cancel();
-  setIsSpeaking(false);
-  setWordIndex(-1);
-};
-
+  const handleStopSpeak = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+    setWordIndex(-1);
+  };
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#f1f5f9] p-4 font-sans text-slate-800 flex flex-col items-center overflow-hidden">
+    <div className="min-h-screen bg-[#fffdf5] text-black font-mono p-4 sm:p-8 flex flex-col items-center overflow-x-hidden">
 
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap');
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        @keyframes chalkIn {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .chalk-in { animation: chalkIn 0.7s ease both; }
       `}</style>
 
       {/* Header */}
-      <div className="mb-4 text-center">
-        <h1 className="text-2xl font-black text-slate-700 tracking-tight">
-          AI Academy <span className="text-emerald-600">Interactive Terminal</span>
-        </h1>
-      </div>
-
-      <div className="w-full max-w-[1800px] grid grid-cols-12 gap-4 items-end ">
-
-        {/* ── Teacher (Left) ── */}
-        <div className="col-span-2 flex flex-col items-center justify-end pb-8 ">
-          <div className="relative group ">
-            <img
-              src="https://i.pinimg.com/originals/17/b4/d7/17b4d75844d047a1ae585bda3c27b6ec.gif"
-              alt="Instructor"
-              className="w-full h-auto max-h-[400px] object-contain drop-shadow-2xl transition-transform duration-500 group-hover:scale-105"
-              onError={(e: any) => { e.target.src = "https://cdn-icons-png.flaticon.com/512/3429/3429400.png"; }}
-            />
-            <div className="mt-2 bg-white/95 backdrop-blur-sm shadow-xl border border-slate-200 px-4 py-2 rounded-2xl text-center transform -rotate-1">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-center gap-2">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                Live Instructor
-              </span>
-            </div>
+      <div className="w-full max-w-[1600px] mb-8 flex justify-between items-center bg-white border-4 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <Link href="/pdfviewer" className="flex items-center gap-2 font-bold hover:underline decoration-2">
+          <ArrowLeft className="w-5 h-5" />
+          RETURN
+        </Link>
+        <div className="text-center">
+          <h1 className="text-3xl font-black uppercase tracking-tighter">
+            Neural Classroom
+          </h1>
+          <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase mt-1">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            System Online
           </div>
         </div>
+        <div className="w-24"></div>
+      </div>
 
-        {/* ── Blackboard (Center) ── */}
-        <div className="col-span-8 flex flex-col gap-3">
-          <div className="relative h-[700px] w-full bg-[#1e3932] rounded-[2.5rem] border-[14px] border-[#3e2723] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] overflow-hidden ring-4 ring-black/10">
+      <div className="w-full max-w-[1800px] grid grid-cols-12 gap-8 items-start">
 
-            {/* Chalkboard texture */}
-            <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/chalkboard.png')] pointer-events-none"></div>
+        {/* ── Left Column: Video Tutor ── */}
+        <div className="col-span-3 flex flex-col gap-6">
 
-            {/* Page label chip */}
-            <div className="absolute top-5 left-5 flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
-              <BookOpen size={12} className="text-white/70" />
-              <span className="text-white/70 text-[11px] font-mono tracking-widest uppercase">{pageLabel}</span>
+          {/* Instructor Card */}
+          <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-center relative">
+            <div className="w-full aspect-video border-4 border-black mb-4 bg-black overflow-hidden relative shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <video
+                src="/teacher_video.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover opacity-80"
+              />
+              <div className="absolute inset-0 bg-green-500/10 pointer-events-none"></div>
+              <div className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-black uppercase px-2 py-0.5 animate-pulse">LIVE</div>
             </div>
 
-            <div className="relative h-full p-12 flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-black uppercase text-xl">UNIT-734</h3>
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-black rounded-full"></div>
+                <div className="w-2 h-2 bg-black rounded-full"></div>
+                <div className="w-2 h-2 bg-black rounded-full"></div>
+              </div>
+            </div>
+            <p className="text-xs font-bold uppercase text-gray-500 border-t-2 border-black pt-2 text-left">Active Instructor</p>
+
+            <button
+              onClick={isSpeaking ? handleStopSpeak : handleSpeak}
+              disabled={loading || !content.resp}
+              className={`w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 border-4 border-black font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all ${isSpeaking ? 'bg-red-500 text-white' : 'bg-green-400 text-black'
+                }`}
+            >
+              {isSpeaking ? <MicOff size={20} /> : <Volume2 size={20} />}
+              {isSpeaking ? 'Term. Audio' : 'Init. Audio'}
+            </button>
+          </div>
+
+          {/* Visual Data (Moved from Right) */}
+          {content.images && content.images.length > 0 && (
+            <div className="bg-white border-4 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+              <div className="flex items-center justify-between border-b-4 border-black pb-2 mb-4">
+                <h3 className="font-black uppercase">Visual Data</h3>
+                <div className="bg-black text-white text-xs px-2 font-bold">{content.images.length}</div>
+              </div>
+              <div className="flex flex-col gap-6 p-2">
+                {content.images.map((imgUrl, index) => (
+                  <div key={index} className="relative group overflow-visible">
+                    {/* The Pin */}
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                      <div className="w-4 h-4 bg-red-600 rounded-full border-2 border-black shadow-sm"></div>
+                      <div className="w-0.5 h-3 bg-black mx-auto"></div>
+                    </div>
+
+                    {/* The Image */}
+                    <div className="bg-white p-2 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transform rotate-1 group-hover:rotate-0 transition-transform">
+                      <img src={imgUrl} alt={`Fig ${index}`} className="w-full h-auto grayscale group-hover:grayscale-0 transition-all" />
+                    </div>
+                    <div className="absolute bottom-[-10px] right-[-5px] bg-yellow-400 border-2 border-black px-2 text-[10px] font-bold uppercase transform -rotate-3 z-10">
+                      Fig. 0{index + 1}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* ── Center: Greenboard ── */}
+        <div className="col-span-6 flex flex-col gap-6">
+          <div className="relative min-h-[750px] w-full bg-[#1e3932] rounded-[2rem] border-[12px] border-[#3e2723] shadow-[12px_12px_0px_0px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden">
+
+            {/* Chalkboard Texture Overlay */}
+            <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/chalkboard.png')] pointer-events-none"></div>
+
+            {/* Board Header */}
+            <div className="relative z-10 flex justify-between items-center px-8 py-6">
+              <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+                <span className="text-white/80 font-mono text-xs font-bold uppercase tracking-widest">
+                  {pageLabel}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/50"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500/50"></div>
+              </div>
+            </div>
+
+            <div className="relative flex-1 p-8 sm:px-12 flex flex-col font-mono z-10">
               {/* Loading state */}
               {loading && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-4">
-                  <Loader2 size={40} className="text-white/60 animate-spin" />
-                  <p className="text-white/50 font-mono text-sm tracking-widest uppercase">Generating summary…</p>
+                  <Loader2 size={40} className="text-white animate-spin" />
+                  <p className="text-white font-bold uppercase tracking-widest animate-pulse">Decorrelating Data...</p>
                 </div>
               )}
 
               {/* Error state */}
               {!loading && error && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                  <p className="text-red-300 font-mono text-sm">⚠ {error}</p>
+                  <div className="bg-red-500 text-white p-4 border-4 border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <p className="font-bold uppercase">System Error: {error}</p>
+                  </div>
                   <button
                     onClick={() => { const tmp = chunkIndex; setChunkIndex(-1); setTimeout(() => setChunkIndex(tmp), 50); }}
-                    className="mt-2 px-4 py-2 bg-white/10 text-white/70 rounded-xl text-xs hover:bg-white/20 transition"
+                    className="mt-2 px-4 py-2 bg-white text-black font-bold uppercase hover:bg-gray-200"
                   >
-                    Retry
+                    Retry Protocol
                   </button>
                 </div>
               )}
 
               {/* Content */}
               {!loading && !error && (
-                <>
-                  <div
-                    key={chunkIndex}
-                    className="chalk-in text-white/90 text-3xl leading-relaxed max-w-[65%] whitespace-pre-wrap overflow-y-auto custom-scrollbar"
-                    style={{ fontFamily: '"Gochi Hand", cursive', filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.3))', maxHeight: '560px' }}
-                  >
-                    {content.resp ? (
-                      content.resp.split(/(\s+)/).map((token, i) => {
-                        const isWord = token.trim().length > 0;
-                        // word position = number of non-space tokens before this one
-                        const wPos = content.resp.split(/\s+/).slice(0, content.resp.split(/(\s+)/).slice(0, i).filter(t => t.trim()).length).length;
-                        const wordPos = content.resp.split(/(\s+)/).slice(0, i).filter(t => t.trim()).length;
-                        return (
-                          <span
-                            key={i}
-                            style={isWord && wordPos === wordIndex ? {
-                              background: 'rgba(255,220,0,0.35)',
-                              borderRadius: '4px',
-                              padding: '0 2px',
-                              transition: 'background 0.15s'
-                            } : {}}
-                          >
-                            {token}
-                          </span>
-                        );
-                      })
-                    ) : (
-                      <span className="text-white/30 text-xl italic">No content yet.</span>
-                    )}
-                  </div>
-
-                  {/* Pinned diagrams */}
-              
-                  <div className="absolute top-0 right-4 bottom-0 w-[260px] py-10 flex flex-col gap-8 overflow-y-auto custom-scrollbar pointer-events-auto">
-                    {content.images?.map((imgUrl, index) => (
-                      <div
-                        key={index}
-                        className="group relative bg-white p-2 pb-6 shadow-2xl transform transition-all hover:scale-110 hover:rotate-0 flex-shrink-0 mx-4"
-                        style={{ 
-                          rotate: index % 2 === 0 ? '3deg' : '-4deg',
-                          marginTop: index === 0 ? '20px' : '0px'
-                        }}
-                      >
-                        <img 
-                          src={imgUrl} 
-                          alt={`Fig ${index + 1}`} 
-                          className="w-full h-auto border border-slate-100 object-cover" 
-                        />
-                        <p className="mt-2 text-[10px] font-mono text-slate-400 text-center uppercase tracking-tighter">
-                          Ref_0{index + 1}.png
-                        </p>
-                        {/* Red pin head */}
-                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-600 rounded-full shadow-md border border-red-700"></div>
-                      </div>
-                    ))}
-                    {/* Spacer at the bottom to ensure the last image isn't cut off by the tray */}
-                    <div className="h-10 w-full flex-shrink-0"></div>
-                  </div>
-                </>
+                <div
+                  key={chunkIndex}
+                  className="text-xl md:text-2xl leading-relaxed whitespace-pre-wrap overflow-y-auto pr-4 custom-scrollbar text-white/90"
+                  style={{
+                    fontFamily: '"Gochi Hand", cursive',
+                    maxHeight: '550px',
+                    textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  {content.resp ? (
+                    content.resp.split(/(\s+)/).map((token, i) => {
+                      const isWord = token.trim().length > 0;
+                      const wordPos = content.resp.split(/(\s+)/).slice(0, i).filter(t => t.trim()).length;
+                      return (
+                        <span
+                          key={i}
+                          style={isWord && wordPos === wordIndex ? {
+                            backgroundColor: 'rgba(255,221,0,0.4)',
+                            borderRadius: '4px',
+                            padding: '0 2px',
+                            boxShadow: '0 0 10px rgba(255,221,0,0.2)'
+                          } : {}}
+                        >
+                          {token}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    <span className="text-white/40 italic">... NO DATA STREAM ...</span>
+                  )}
+                </div>
               )}
+            </div>
 
-              {/* Chalk stubs */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4 opacity-50">
-                <div className="w-10 h-3 bg-white rounded-sm rotate-12"></div>
-                <div className="w-8 h-3 bg-blue-100 rounded-sm -rotate-6"></div>
+            {/* Chalk Tray / Bottom Controls */}
+            <div className="mt-auto bg-[#2d1b18] p-4 flex justify-between items-center relative shadow-inner border-t-[8px] border-[#3e2723]">
+              {/* Chalks */}
+              <div className="absolute -top-3 left-12 flex gap-2">
+                <div className="w-12 h-2 bg-white rounded-sm shadow-sm transform -rotate-2"></div>
+                <div className="w-8 h-2 bg-blue-200 rounded-sm shadow-sm transform rotate-6"></div>
+              </div>
+
+              <div className="w-full flex justify-between items-center z-10 px-4">
+                <button
+                  onClick={goPrev}
+                  disabled={chunkIndex === 0 || loading}
+                  className="bg-[#1e3932] text-white border-2 border-[#5d4037] px-6 py-2 rounded-lg font-black uppercase text-sm hover:bg-[#2e5248] disabled:opacity-30 disabled:cursor-not-allowed shadow-md transition-all active:translate-y-1"
+                >
+                  Prev Slide
+                </button>
+
+                <span className="text-[#8d6e63] text-xs font-bold uppercase tracking-widest inset-x-0 mx-auto absolute text-center pointer-events-none">
+                  Interactive Board v2.0
+                </span>
+
+                <button
+                  onClick={goNext}
+                  disabled={chunkIndex === totalChunks - 1 || loading}
+                  className="bg-[#1e3932] text-white border-2 border-[#5d4037] px-6 py-2 rounded-lg font-black uppercase text-sm hover:bg-[#2e5248] disabled:opacity-30 disabled:cursor-not-allowed shadow-md transition-all active:translate-y-1"
+                >
+                  Next Slide
+                </button>
               </div>
             </div>
-          </div>
-
-          {/* Chalk tray */}
-          <div className="h-4 w-[104%] -ml-[2%] bg-[#2d1b18] rounded-full mt-1 blur-[1px]"></div>
-
-          {/* ── Navigation Bar ── */}
-          <div className="flex items-center justify-between bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white px-5 py-3 mt-1">
-            <button
-              onClick={goPrev}
-              disabled={chunkIndex === 0 || loading}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 active:scale-95 transition-all shadow"
-            >
-              <ChevronLeft size={18} />
-              Back
-            </button>
-
-            {/* Chunk dots */}
-            <div className="flex items-center gap-2">
-              {Array.from({ length: totalChunks }).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setChunkIndex(i)}
-                  disabled={loading}
-                  className={`w-2.5 h-2.5 rounded-full transition-all ${
-                    i === chunkIndex ? 'bg-emerald-500 scale-125' : 'bg-slate-300 hover:bg-slate-400'
-                  }`}
-                />
-              ))}
-              <span className="ml-3 text-xs text-slate-400 font-mono">
-                {chunkIndex + 1} / {totalChunks}
-              </span>
-            </div>
-
-            <button
-              onClick={goNext}
-              disabled={chunkIndex === totalChunks - 1 || loading}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-emerald-600 active:scale-95 transition-all shadow shadow-emerald-100"
-            >
-              Next
-              <ChevronRight size={18} />
-            </button>
-
-            <button
-              onClick={isSpeaking ? handleStopSpeak : handleSpeak}
-              disabled={loading || !content.resp}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
-                isSpeaking
-                  ? 'bg-red-500 text-white hover:bg-red-600 shadow-red-100'
-                  : 'bg-amber-400 text-slate-900 hover:bg-amber-500 shadow-amber-100'
-              }`}
-            >
-              {isSpeaking ? <MicOff size={18} /> : <Volume2 size={18} />}
-              {isSpeaking ? 'Stop' : 'Listen'}
-            </button>
           </div>
         </div>
 
-        {/* ── Doubt Box (Right) ── */}
-        <div className="col-span-2 h-[700px] mb-[72px] flex flex-col">
-          <div className="flex-1 bg-white/90 backdrop-blur-md rounded-[2.5rem] shadow-xl border border-white p-6 flex flex-col">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="p-2 bg-slate-900 rounded-xl text-white">
-                <MessageSquare size={16} />
-              </div>
-              <h3 className="font-bold text-xs text-slate-700 uppercase tracking-widest">Doubt Box</h3>
+        {/* ── Right Column: Doubt Box ── */}
+        <div className="col-span-3 flex flex-col gap-6">
+
+          <div className="h-[600px] flex flex-col bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <div className="bg-pink-500 border-b-4 border-black p-3 flex items-center justify-between">
+              <span className="font-black uppercase text-white">Direct Line</span>
+              <MessageSquare className="text-white" size={20} />
             </div>
 
-            <div className="flex-1 overflow-y-auto mb-4 space-y-4 custom-scrollbar pr-2">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[90%] p-3 rounded-2xl text-[11px] leading-relaxed ${
-                    msg.role === 'user'
-                      ? 'bg-emerald-600 text-white rounded-br-none shadow-md'
-                      : 'bg-slate-100 text-slate-600 rounded-bl-none border border-slate-200'
-                  }`}>
+                  <div className={`max-w-[90%] p-3 border-2 border-black text-xs font-bold ${msg.role === 'user'
+                      ? 'bg-blue-300 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                      : 'bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                    }`}>
                     {msg.text}
                   </div>
                 </div>
@@ -413,28 +411,26 @@ const handleStopSpeak = () => {
               <div ref={chatEndRef} />
             </div>
 
-            <div className="space-y-3 pt-4 border-t border-slate-100">
-              <textarea
-                rows={3}
-                className="w-full bg-slate-50 border-none rounded-2xl p-4 text-xs focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-none shadow-inner"
-                placeholder="Type your question..."
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-              />
+            <div className="p-4 border-t-4 border-black bg-white">
               <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="w-full bg-white border-2 border-black p-2 text-xs font-bold placeholder-gray-400 focus:outline-none focus:bg-yellow-50"
+                  placeholder="INPUT QUERY..."
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+                />
                 <button
                   onClick={handleSend}
-                  className="flex-1 py-3.5 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 transition-all active:scale-95 flex items-center justify-center shadow-lg shadow-emerald-100"
+                  className="bg-black text-white p-2 border-2 border-black hover:bg-gray-800"
                 >
                   <Send size={16} />
-                </button>
-                <button className="w-14 py-3.5 bg-slate-900 text-white rounded-2xl hover:bg-black transition-all active:scale-95 flex items-center justify-center shadow-lg shadow-slate-100">
-                  <Mic size={16} />
                 </button>
               </div>
             </div>
           </div>
+
         </div>
 
       </div>

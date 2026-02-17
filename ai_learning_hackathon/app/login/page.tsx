@@ -1,9 +1,10 @@
 'use client'
 
 import { createClient } from '@/utils/supabase/client'
-import { CheckCircle2, Command, Github, Layout, Library, Sparkles } from 'lucide-react'
+import { Sparkles, Terminal, ArrowRight, ShieldCheck, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -26,35 +27,51 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 p-4 font-sans text-zinc-100">
-      <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700">
-        
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 font-mono text-black relative overflow-hidden">
+
+      {/* Background Grid Pattern */}
+      <div className="fixed inset-0 z-0 opacity-10 pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
+
         {/* Logo/Brand Area */}
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-2xl shadow-indigo-500/20">
-            <Sparkles className="h-8 w-8 text-white" />
+        <div className="mb-12 flex flex-col items-center text-center">
+          <div className="relative group cursor-pointer mb-6">
+            <div className="absolute inset-0 bg-black translate-x-2 translate-y-2 rounded-none transition-transform group-hover:translate-x-3 group-hover:translate-y-3"></div>
+            <div className="relative flex h-20 w-20 items-center justify-center border-4 border-black bg-yellow-400 z-10 transition-transform group-hover:-translate-x-1 group-hover:-translate-y-1">
+              <Terminal className="h-10 w-10 text-black" />
+            </div>
           </div>
-          <h1 className="mb-2 text-3xl font-extrabold tracking-tight text-white">
-            Welcome Back
+
+          <h1 className="mb-2 text-5xl font-black uppercase tracking-tighter">
+            LOGIN
           </h1>
-          <p className="text-zinc-400">
-            Sign in to continue your learning journey
-          </p>
+          <div className="bg-black text-white px-4 py-1 transform -rotate-2 inline-block">
+            <p className="text-sm font-bold uppercase tracking-widest">
+              Auth Protocol Required
+            </p>
+          </div>
         </div>
 
         {/* Card */}
-        <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 shadow-2xl backdrop-blur-xl">
-          <div className="flex flex-col gap-4">
+        <div className="border-4 border-black bg-white p-8 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative group">
+          {/* Decorative corner */}
+          <div className="absolute -top-2 -right-2 w-8 h-8 bg-pink-500 border-2 border-black z-20"></div>
+
+          <div className="flex flex-col gap-6">
+
             <button
               onClick={handleLogin}
               disabled={isLoading}
-              className="group relative flex w-full items-center justify-center gap-3 rounded-xl bg-white px-4 py-3.5 text-sm font-semibold text-zinc-950 transition-all hover:bg-zinc-200 disabled:opacity-50"
+              className="group relative flex w-full items-center justify-center gap-3 border-4 border-black bg-white px-4 py-4 text-base font-black uppercase text-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-yellow-400 active:translate-x-[6px] active:translate-y-[6px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-950 border-t-transparent" />
+                <div className="h-6 w-6 animate-spin rounded-full border-4 border-black border-t-transparent" />
               ) : (
                 <>
-                  <svg className="h-5 w-5" viewBox="0 0 24 24">
+                  <svg className="h-6 w-6" viewBox="0 0 24 24">
                     <path
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                       fill="#4285F4"
@@ -72,38 +89,40 @@ export default function LoginPage() {
                       fill="#EA4335"
                     />
                   </svg>
-                  <span>Continue with Google</span>
+                  <span>Use Google ID</span>
                 </>
               )}
             </button>
           </div>
 
-          <div className="my-6 flex items-center gap-4">
-            <div className="h-px flex-1 bg-zinc-800" />
-            <span className="text-xs font-medium text-zinc-500 uppercase tracking-widest">Features</span>
-            <div className="h-px flex-1 bg-zinc-800" />
+          <div className="my-8 flex items-center gap-4">
+            <div className="h-1 flex-1 bg-black" />
+            <span className="text-xs font-black uppercase tracking-widest bg-black text-white px-2 py-1 transform rotate-3">Capabilities</span>
+            <div className="h-1 flex-1 bg-black" />
           </div>
 
-          <div className="space-y-3">
-             <FeatureItem icon={Library} text="Smart PDF Management" />
-             <FeatureItem icon={Command} text="AI-Powered Context Search" />
-             <FeatureItem icon={CheckCircle2} text="Progress Tracking" />
+          <div className="space-y-4">
+            <FeatureItem icon={Sparkles} text="Neural Engine Access" color="bg-cyan-300" />
+            <FeatureItem icon={ShieldCheck} text="Encrypted Storage" color="bg-green-300" />
+            <FeatureItem icon={Zap} text="Instant Analysis" color="bg-pink-300" />
           </div>
         </div>
-        
-        <p className="mt-8 text-center text-xs text-zinc-500">
-          By continuing, you agree to our Terms of Service and Privacy Policy.
+
+        <p className="mt-8 text-center text-xs font-bold uppercase text-gray-500">
+          By proceeding, you agree to our <span className="underline decoration-2 decoration-black text-black cursor-pointer">Terms</span> and <span className="underline decoration-2 decoration-black text-black cursor-pointer">Privacy Protocol</span>.
         </p>
       </div>
     </div>
   )
 }
 
-function FeatureItem({ icon: Icon, text }: { icon: any, text: string }) {
+function FeatureItem({ icon: Icon, text, color }: { icon: any, text: string, color: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 p-3 text-sm text-zinc-300">
-      <Icon className="h-4 w-4 text-violet-400" />
-      <span>{text}</span>
+    <div className="flex items-center gap-4 p-2 group cursor-default">
+      <div className={`flex h-10 w-10 items-center justify-center border-2 border-black ${color} shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform group-hover:-translate-y-1`}>
+        <Icon className="h-5 w-5 text-black" />
+      </div>
+      <span className="font-bold text-sm uppercase">{text}</span>
     </div>
   )
 }

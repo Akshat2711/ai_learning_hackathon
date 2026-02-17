@@ -6,19 +6,37 @@
 }
 
 :root {
-    --foreground: #171717;
-    --background: #ffffff;
+    --foreground: #000000;
+    --background: #fffdf5;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --foreground: #ededed;
-        --background: #0a0a0a;
+        --foreground: #000000;
+        --background: #fffdf5;
     }
 }
 
 body {
     color: var(--foreground);
     background: var(--background);
+    background-image: radial-gradient(#000000 1px, transparent 1px);
+    background-size: 24px 24px;
     font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Brutalist Utilities */
+@layer utilities {
+    .brutal-border {
+        @apply border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)];
+    }
+    .brutal-shadow {
+        @apply shadow-[4px_4px_0px_0px_rgba(0,0,0,1)];
+    }
+    .brutal-btn {
+        @apply border-2 border-black bg-white px-6 py-2 font-bold uppercase text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none;
+    }
+    .brutal-card {
+        @apply border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)];
+    }
 }
