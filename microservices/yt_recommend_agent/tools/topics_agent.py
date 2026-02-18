@@ -33,7 +33,6 @@ async def extract_topics(text: str):
 
     for chunk in chunks:
         prompt = PROMPT.format(chunk=chunk)
-
         response = client.models.generate_content(
             model="gemini-3-flash-lite",
             contents=prompt,
