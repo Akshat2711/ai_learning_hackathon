@@ -18,7 +18,7 @@ export interface VideoRecommendationsResponse {
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const API_BASE = "http://127.0.0.1:8090";
+const API_BASE = "https://yt-distributor.onrender.com";
 
 // ─── summarizeText ─────────────────────────────────────────────────────────────
 /**
