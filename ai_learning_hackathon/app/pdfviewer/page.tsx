@@ -154,7 +154,7 @@ export default function PDFViewerPage() {
         let cancelled = false;
         // Typed loosely to avoid fighting pdfjs-dist's internal RenderTask types
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let renderTask: any = null;
+        let renderTask: { cancel: () => void; promise: Promise<any> } | null = null;
 
         const renderPage = async () => {
             try {
