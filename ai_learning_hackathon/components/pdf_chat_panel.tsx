@@ -23,7 +23,7 @@ const QUICK_QUERIES = [
     { label: "📄 Explain this page", prompt: "Explain what is on this page in simple terms." },
     { label: "📝 Summarise", prompt: "Give me a concise summary of this page." },
     { label: "🔑 Key concepts", prompt: "What are the key concepts or terms on this page?" },
-    { label: "❓ Quiz me", prompt: "Ask me 3 questions to test my understanding of this page." },
+    { label: "❓ Explain circled areas", prompt: "explain the circled areas on this page" },
     { label: "🔗 Real-world use", prompt: "Give me a real-world example of the topic on this page." },
     { label: "🤔 Simplify", prompt: "Explain this page as if I'm a complete beginner." },
 ];
