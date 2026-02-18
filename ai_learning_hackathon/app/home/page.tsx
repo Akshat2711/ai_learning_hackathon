@@ -135,6 +135,7 @@ export default function HomePage() {
                 PDF or PPTX. We extract the raw intel and index it for the neural engine.
               </p>
 
+
               <label className="relative cursor-pointer w-full max-w-md">
                 <div className="w-full bg-black text-white px-8 py-6 text-xl font-bold uppercase border-4 border-transparent hover:bg-white hover:text-black hover:border-black transition-all flex items-center justify-center gap-4 shadow-[8px_8px_0px_0px_#9333ea]">
                   {isProcessing ? <Loader2 className="animate-spin w-8 h-8" /> : <FileText className="w-8 h-8" />}
