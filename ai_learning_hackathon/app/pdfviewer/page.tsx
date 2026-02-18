@@ -7,6 +7,7 @@ import {
     ZoomIn, ZoomOut,
     Sparkles, ArrowLeft,
     BookOpenText,
+    Music,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
@@ -371,6 +372,18 @@ export default function PDFViewerPage() {
                             <BookOpenText className="w-4 h-4" />
                             <span className="hidden sm:inline">Lecture</span>
                         </button>
+
+
+
+                        {/* podcast mode */}
+                        <button
+                            onClick={() => router.push('/podcast')}
+                            className="ml-2 bg-purple-300 text-white p-2 px-4 border-2 border-black shadow-[4px_4px_0px_0px_#888] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#888] transition-all flex items-center gap-2 text-sm font-black uppercase"
+                        >
+                            <Music className="w-4 h-4" />
+                            <span className="hidden sm:inline">podcast</span>
+                        </button>
+                        
                     </div>
 
                     <div className="w-12" />
