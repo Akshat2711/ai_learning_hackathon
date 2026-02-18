@@ -35,7 +35,7 @@ async def extract_topics(text: str):
         prompt = PROMPT.format(chunk=chunk)
 
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3-flash-lite",
             contents=prompt,
             config={"response_mime_type": "application/json"},
         )

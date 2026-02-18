@@ -11,7 +11,7 @@ export async function summarizeText(text: string): Promise<SummaryResponse> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-    },
+    },  
     body: JSON.stringify({ text }),
   });
 
